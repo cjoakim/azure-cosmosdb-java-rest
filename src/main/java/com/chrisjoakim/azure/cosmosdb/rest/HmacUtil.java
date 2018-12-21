@@ -10,6 +10,10 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.digest.HmacUtils;
+// https://eclipsesource.com/blogs/2016/07/06/keyed-hash-message-authentication-code-in-rest-apis/
+// byte[] hmacSha256 = org.apache.commons.codec.digest.HmacUtils.hmacSha256(secretAccessKey, message);
+// String hmacSha256Base64 = Base64.getEncoder().encodeToString(hmacSha256);
 
 /**
  *
