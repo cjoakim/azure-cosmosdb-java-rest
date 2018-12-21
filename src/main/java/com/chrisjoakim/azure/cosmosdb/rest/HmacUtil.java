@@ -1,5 +1,6 @@
 package com.chrisjoakim.azure.cosmosdb.rest;
 
+import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -37,7 +38,9 @@ public class HmacUtil {
             mac.init(new SecretKeySpec(Base64.decodeBase64(this.cosmosdbKey), MAC_ALGORITHM));
             String message = this.generateMessage(httpVerb, resourceType, resourceLink, date);
             byte[] digest = mac.doFinal(message.getBytes("UTF-8"));
-            return Base64.encodeBase64String(digest);
+            String signature =  Base64.encodeBase64String(digest);
+            String encodable = "type=master&ver=1.0&sig=" + signature;
+            return URLEncoder.encode(encodable, "UTF-8");
         }
         catch (Exception e) {
             System.err.println("Exception in HmacUtil#generateHmac: " + e.getClass().getName() + " " + e.getMessage());

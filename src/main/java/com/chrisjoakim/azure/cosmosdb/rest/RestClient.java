@@ -47,20 +47,22 @@ public class RestClient {
         String hmac = hmacUtil.generateHmac("get", resourceType, resourceLink, this.date);
         System.out.println("getDocument-hmac: " + hmac);
 
+        String pkJsonArray = "[\"" + partitionKey + "\"]";
+        System.out.println("getDocument-pkJsonArray: " + pkJsonArray); // ["CLT"]
+
         HttpGet request = new HttpGet(fullUrl);
-        request.setHeader("Authorization", "");
+        request.setHeader("Authorization", hmac);
         request.setHeader("x-ms-date", hmacUtil.formatDate(this.date));
         request.setHeader("x-ms-version", "2017-02-22");
-        request.setHeader("x-ms-documentdb-partitionkey", "[\"" + partitionKey + "\"]"); // [\"CLT\"]
+        request.setHeader("x-ms-documentdb-partitionkey", pkJsonArray);
 
         HttpResponse response = httpClient.execute(request);
         this.responseCode = response.getStatusLine().getStatusCode();
 
-        BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-
+        BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
         StringBuffer sb = new StringBuffer();
         String line = "";
-        while ((line = rd.readLine()) != null) {
+        while ((line = reader.readLine()) != null) {
             sb.append(line);
         }
         return sb.toString();
