@@ -7,13 +7,10 @@ import java.util.Date;
 import java.util.TimeZone;
 
 import javax.crypto.Mac;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.codec.digest.HmacUtils;
-// https://eclipsesource.com/blogs/2016/07/06/keyed-hash-message-authentication-code-in-rest-apis/
-// byte[] hmacSha256 = org.apache.commons.codec.digest.HmacUtils.hmacSha256(secretAccessKey, message);
-// String hmacSha256Base64 = Base64.getEncoder().encodeToString(hmacSha256);
 
 /**
  *
@@ -38,6 +35,28 @@ public class HmacUtil {
     public String generateHmac(String httpVerb, String resourceType, String resourceLink, Date date) {
 
         try {
+            String message = this.generateMessage(httpVerb, resourceType, resourceLink, date);
+            System.out.println("message below");
+            System.out.println(message);
+            System.out.println("message above");
+            byte[] key = this.cosmosdbKey.getBytes();
+            SecretKey hmacKey = new SecretKeySpec(key, MAC_ALGORITHM);
+            Mac mac = Mac.getInstance(MAC_ALGORITHM);
+            mac.init(hmacKey);
+            byte[] digest = mac.doFinal(message.getBytes());
+            String signature = Base64.encodeBase64String(digest);
+            String encodable = "type=master&ver=1.0&sig=" + signature;
+            return URLEncoder.encode(encodable, "UTF-8");
+        }
+        catch (Exception e) {
+            System.err.println("Exception in HmacUtil#generateHmac: " + e.getClass().getName() + " " + e.getMessage());
+            return null;
+        }
+    }
+
+    public String generateHmac_v0(String httpVerb, String resourceType, String resourceLink, Date date) {
+
+        try {
             Mac mac = Mac.getInstance(MAC_ALGORITHM);
             mac.init(new SecretKeySpec(Base64.decodeBase64(this.cosmosdbKey), MAC_ALGORITHM));
             String message = this.generateMessage(httpVerb, resourceType, resourceLink, date);
@@ -58,8 +77,20 @@ public class HmacUtil {
         sb.append("" + httpVerb.toLowerCase() + "\n");
         sb.append("" + resourceType.toLowerCase() + "\n");
         sb.append("" + resourceLink.toLowerCase() + "\n");
-        sb.append("" + this.formatDate(date) + "\n\n");
+        sb.append("" + this.formatDate(date).toLowerCase() + "\n\n");
         return sb.toString();
+
+        /*
+get
+docs
+dbs/dev/colls/airports/docs/72d3d5e7-313d-4c03-ae6c-f6a330e9fcb8
+sat, 22 dec 2018 12:26:42 gmt
+
+get
+docs
+dbs/dev/colls/airports/docs/72d3d5e7-313d-4c03-ae6c-f6a330e9fcb8
+sat, 22 dec 2018 12:25:14 gmt
+*/
     }
 
     /**

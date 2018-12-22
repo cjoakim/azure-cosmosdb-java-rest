@@ -2,6 +2,7 @@ package com.chrisjoakim.azure.cosmosdb.rest;
 
 import java.util.Date;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
@@ -41,14 +42,19 @@ public class RestClient {
         HmacUtil hmacUtil = new HmacUtil(this.cosmosdbKey);
         String resourceType = "docs";
         String resourceLink = documentResourceLink(dbName, collName, docId);
+        System.out.println("getDocument-resourceLink: " + resourceLink);
+
         String fullUrl = this.cosmosdbUri + resourceLink;
         System.out.println("getDocument-fullUrl: " + fullUrl);
 
         String hmac = hmacUtil.generateHmac("get", resourceType, resourceLink, this.date);
         System.out.println("getDocument-hmac: " + hmac);
 
-        String pkJsonArray = "[\"" + partitionKey + "\"]";
-        System.out.println("getDocument-pkJsonArray: " + pkJsonArray); // ["CLT"]
+        String[] partitionKeys = { partitionKey };
+        ObjectMapper objectMapper = new ObjectMapper();
+        String pkJsonArray = objectMapper.writeValueAsString(partitionKeys); // ["CLT"]
+        System.out.println("getDocument-pkJsonArray: " + pkJsonArray);
+        System.out.println("x-ms-date: " + hmacUtil.formatDate(this.date));
 
         HttpGet request = new HttpGet(fullUrl);
         request.setHeader("Authorization", hmac);
@@ -93,7 +99,7 @@ public class RestClient {
 
             String responseData = client.getDocument(dbName, collName, partitionKey, docId);
             System.out.println("main-responseCode: " + client.responseCode);
-            System.out.println("main-responseData: " + client.responseData);
+            System.out.println("main-responseData: " + responseData);
         }
         catch (Exception e) {
             e.printStackTrace();
