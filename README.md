@@ -4,7 +4,7 @@ A REST client for CosmosDB, implemented in Java
 
 ## Environment Variables:
 
-This example code uses the following:
+This example code uses the following two environment variables; set them per your CosmosDB account:
 ```
 AZURE_COSMOSDB_SQLDB_URI
 AZURE_COSMOSDB_SQLDB_KEY
