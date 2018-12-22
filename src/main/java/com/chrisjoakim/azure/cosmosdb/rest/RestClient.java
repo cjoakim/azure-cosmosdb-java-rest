@@ -3,6 +3,7 @@ package com.chrisjoakim.azure.cosmosdb.rest;
 import java.util.Date;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
@@ -48,20 +49,24 @@ public class RestClient {
         System.out.println("getDocument-fullUrl: " + fullUrl);
 
         String hmac = hmacUtil.generateHmac("get", resourceType, resourceLink, this.date);
-        System.out.println("getDocument-hmac: " + hmac);
 
         String[] partitionKeys = { partitionKey };
         ObjectMapper objectMapper = new ObjectMapper();
         String pkJsonArray = objectMapper.writeValueAsString(partitionKeys); // ["CLT"]
-        System.out.println("getDocument-pkJsonArray: " + pkJsonArray);
-        System.out.println("x-ms-date: " + hmacUtil.formatDate(this.date));
+        //pkJsonArray = "[\\\"CLT\\\"]";  // [\"CLT\"]
 
         HttpGet request = new HttpGet(fullUrl);
         request.setHeader("Authorization", hmac);
+        request.setHeader("Accept", "application/json");
         request.setHeader("x-ms-date", hmacUtil.formatDate(this.date));
         request.setHeader("x-ms-version", "2017-02-22");
         request.setHeader("x-ms-documentdb-partitionkey", pkJsonArray);
 
+        Header[] headers = request.getAllHeaders();
+        for (int i = 0; i < headers.length; i++) {
+            Header h = headers[i];
+            System.out.println("header: " + h.getName() + " -> " + h.getValue());
+        }
         HttpResponse response = httpClient.execute(request);
         this.responseCode = response.getStatusLine().getStatusCode();
 
@@ -138,3 +143,18 @@ public class RestClient {
 //        "_ts": 1544887086
 //        }
 //        ]
+
+
+/*
+main - cosmosdbUri: https://cjoakim-cosmosdb-sql.documents.azure.com:443/
+main - cosmosdbKey: 5FdF3Wcg9TB7ON7TsdJxP5kguwtKgbLEIm2ivkNlGxCI7m6kErVeV0znuPQBxm95B7biT5GBpblSWzmRfUSicw==
+getDocument-resourceLink: dbs/dev/colls/airports/docs/72d3d5e7-313d-4c03-ae6c-f6a330e9fcb8
+getDocument-fullUrl: https://cjoakim-cosmosdb-sql.documents.azure.com:443/dbs/dev/colls/airports/docs/72d3d5e7-313d-4c03-ae6c-f6a330e9fcb8
+signature: TdDe+crjittr8tBvZxh7eabKiRE02/PAFtajb5i0Fkw=
+getDocument-hmac: type%3Dmaster%26ver%3D1.0%26sig%3DTdDe%2Bcrjittr8tBvZxh7eabKiRE02%2FPAFtajb5i0Fkw%3D
+getDocument-pkJsonArray: ["CLT"]
+x-ms-date: Sat, 22 Dec 2018 13:02:24 GMT
+main-responseCode: 401
+main-responseData: {"code":"Unauthorized","message":"The input authorization token can't serve the request. Please check that the expected payload is built as per the protocol, and check the key being used. Server used the following payload to sign: 'get\ndocs\ndbs/dev/colls/airports/docs/72d3d5e7-313d-4c03-ae6c-f6a330e9fcb8\nsat, 22 dec 2018 13:02:24 gmt\n\n'\r\nActivityId: 4c70a3cf-0a50-4991-8d62-60f2394b1cf1, Microsoft.Azure.Documents.Common/2.1.0.0"}
+
+ */
