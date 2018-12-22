@@ -13,7 +13,8 @@ import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.codec.binary.Base64;
 
 /**
- *
+ * Utility class to generate HMAC values for calls to the CosmosDB REST API.
+ * Chris Joakim, Microsoft, 2018/12/22
  */
 public class HmacUtil {
 
@@ -24,7 +25,17 @@ public class HmacUtil {
     private String cosmosdbKey;
     private DateFormat dateFormatter;
 
+    /**
+     * Default constructor; do not use.
+     */
+    private HmacUtil() {
 
+        super();
+    }
+
+    /**
+     * The given arg is a valid key to your CosmosDB account.
+     */
     public HmacUtil(String cosmosdbKey) {
 
         super();
@@ -45,9 +56,7 @@ public class HmacUtil {
             mac.init(hmacKey);
             byte[] digest = mac.doFinal(message.getBytes());
             String signature = Base64.encodeBase64String(digest);
-            System.out.println("signature: " + signature);
-            String encodable = "type=master&ver=1.0&sig=" + signature;
-            return URLEncoder.encode(encodable, "UTF-8");
+            return URLEncoder.encode("type=master&ver=1.0&sig=" + signature, "UTF-8");
         }
         catch (Exception e) {
             System.err.println("Exception in HmacUtil#generateHmac: " + e.getClass().getName() + " " + e.getMessage());
@@ -91,41 +100,44 @@ public class HmacUtil {
         return String.format("dbs/%s/colls/%s/docs/%s", dbName, collName, docId);
     }
 
-    protected static void displayTimezoneIds() {
-
-        String[] timeZoneIds = TimeZone.getAvailableIDs();
-        for (int i = 0; i < timeZoneIds.length; i++) {
-            System.out.println(timeZoneIds[i]);
-        }
-    }
-
     /**
-     * This main() method is for ad-hoc testing purposes only.
+     * This main() method simply demonstrates the use of this class.
      */
     public static void main(String[] args) {
 
-        String cosmosdbKey = System.getenv("AZURE_COSMOSDB_SQLDB_KEY");
-        System.out.println("main - cosmosdbKey: " + cosmosdbKey);
+        try {
+            String cosmosdbKey  = System.getenv("AZURE_COSMOSDB_SQLDB_KEY");
+            String resourceLink = "dbs/dev/colls/airports/docs/72d3d5e7-313d-4c03-ae6c-f6a330e9fcb8";
 
-        long epoch = System.currentTimeMillis();
-        System.out.println("main - epoch: " + epoch);
-        Date date = new Date(epoch);
+            HmacUtil util = new HmacUtil(cosmosdbKey);
+            String hmac = null;
+            Date date = null;
 
-        HmacUtil util = new HmacUtil(cosmosdbKey);
-        String s = util.formatDate(date);
-        System.out.println("main - date: " + util.formatDate(date));
+            // The same instance may be reused multiple times, as follows:
+            // Notice how the generated hmac value changes over time with the different Date values.
 
-        String httpVerb = "get";
-        String resourceType = "docs";
-        String dbName = "dev";
-        String collName = "airports";
-        String docId = "72d3d5e7-313d-4c03-ae6c-f6a330e9fcb8";
+            date = new Date();
+            hmac = util.generateHmac("GET", "docs", resourceLink, date);
+            System.out.println(String.format("date: %s  hmac: %s", util.formatDate(date), hmac));
+            Thread.sleep(2000);
 
-        String resourceLink = util.documentResourceLink(dbName, collName, docId);
-        System.out.println("main - resourceLink: " + resourceLink);
+            date = new Date();
+            hmac = util.generateHmac("GET", "docs", resourceLink, date);
+            System.out.println(String.format("date: %s  hmac: %s", util.formatDate(date), hmac));
+            Thread.sleep(2000);
 
-        String hmac = util.generateHmac(httpVerb, resourceType, resourceLink, date);
-        System.out.println("main - hmac: " + hmac);
+            date = new Date();
+            hmac = util.generateHmac("GET", "docs", resourceLink, date);
+            System.out.println(String.format("date: %s  hmac: %s", util.formatDate(date), hmac));
+            Thread.sleep(2000);
+
+            // Output below:
+            // date: Sat, 22 Dec 2018 14:03:47 GMT  hmac: type%3Dmaster%26ver%3D1.0%26sig%3D2dzWFgGaz4GXL4a34EohtgXiPndb6AQc7Luyfo1pk9U%3D
+            // date: Sat, 22 Dec 2018 14:03:49 GMT  hmac: type%3Dmaster%26ver%3D1.0%26sig%3Dd0w8SAr2A9aGIjBc21Endi6yYsmJMWYZXm896qhre%2FE%3D
+            // date: Sat, 22 Dec 2018 14:03:51 GMT  hmac: type%3Dmaster%26ver%3D1.0%26sig%3DBv6md1avG33XEdzgffMKke2SxD%2B96%2FrZqCY%2Bbh9pu%2BE%3D
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
     }
-
 }

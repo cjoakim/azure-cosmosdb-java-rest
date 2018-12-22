@@ -1,22 +1,22 @@
 package com.chrisjoakim.azure.cosmosdb.rest;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.Date;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.message.BasicNameValuePair;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-
-
+/**
+ * Utility class to execute a HTTP REST call to CosmosDB.
+ * It uses sibling class HmacUtil to generate the HMAC value for the Authorization header.
+ * Chris Joakim, Microsoft, 2018/12/22
+ */
 public class RestClient {
 
     // Instance variables:
@@ -52,15 +52,14 @@ public class RestClient {
 
         String[] partitionKeys = { partitionKey };
         ObjectMapper objectMapper = new ObjectMapper();
-        String pkJsonArray = objectMapper.writeValueAsString(partitionKeys); // ["CLT"]
-        //pkJsonArray = "[\\\"CLT\\\"]";  // [\"CLT\"]
+        String pkJsonArray = objectMapper.writeValueAsString(partitionKeys);
 
         HttpGet request = new HttpGet(fullUrl);
         request.setHeader("Authorization", hmac);
         request.setHeader("Accept", "application/json");
         request.setHeader("x-ms-date", hmacUtil.formatDate(this.date));
         request.setHeader("x-ms-version", "2017-02-22");
-        request.setHeader("x-ms-documentdb-partitionkey", pkJsonArray);
+        request.setHeader("x-ms-documentdb-partitionkey", pkJsonArray); // <- a JSON Array!
 
         Header[] headers = request.getAllHeaders();
         for (int i = 0; i < headers.length; i++) {
@@ -112,49 +111,8 @@ public class RestClient {
     }
 }
 
-//[
-//        {
-//        "name": "Charlotte Douglas Intl",
-//        "city": "Charlotte",
-//        "country": "United States",
-//        "iata_code": "CLT",
-//        "latitude": "35.214",
-//        "longitude": "-80.943139",
-//        "altitude": "748",
-//        "timezone_num": "-5",
-//        "timezone_code": "America/New_York",
-//        "location": {
-//        "type": "Point",
-//        "coordinates": [
-//        -80.943139,
-//        35.214
-//        ]
-//        },
-//        "pk": "CLT",
-//        "seq": 3778,
-//        "last_update": 0,
-//        "temperature": 20.35801744984134,
-//        "humidity": 91.04754455082039,
-//        "id": "72d3d5e7-313d-4c03-ae6c-f6a330e9fcb8",
-//        "_rid": "8SxQAKvbYoXvAQAAAAAAAA==",
-//        "_self": "dbs/8SxQAA==/colls/8SxQAKvbYoU=/docs/8SxQAKvbYoXvAQAAAAAAAA==/",
-//        "_etag": "\"0000f550-0000-0100-0000-5c151b2e0000\"",
-//        "_attachments": "attachments/",
-//        "_ts": 1544887086
-//        }
-//        ]
-
 
 /*
-main - cosmosdbUri: https://cjoakim-cosmosdb-sql.documents.azure.com:443/
-main - cosmosdbKey: 5FdF3Wcg9TB7ON7TsdJxP5kguwtKgbLEIm2ivkNlGxCI7m6kErVeV0znuPQBxm95B7biT5GBpblSWzmRfUSicw==
-getDocument-resourceLink: dbs/dev/colls/airports/docs/72d3d5e7-313d-4c03-ae6c-f6a330e9fcb8
-getDocument-fullUrl: https://cjoakim-cosmosdb-sql.documents.azure.com:443/dbs/dev/colls/airports/docs/72d3d5e7-313d-4c03-ae6c-f6a330e9fcb8
-signature: TdDe+crjittr8tBvZxh7eabKiRE02/PAFtajb5i0Fkw=
-getDocument-hmac: type%3Dmaster%26ver%3D1.0%26sig%3DTdDe%2Bcrjittr8tBvZxh7eabKiRE02%2FPAFtajb5i0Fkw%3D
-getDocument-pkJsonArray: ["CLT"]
-x-ms-date: Sat, 22 Dec 2018 13:02:24 GMT
-main-responseCode: 401
-main-responseData: {"code":"Unauthorized","message":"The input authorization token can't serve the request. Please check that the expected payload is built as per the protocol, and check the key being used. Server used the following payload to sign: 'get\ndocs\ndbs/dev/colls/airports/docs/72d3d5e7-313d-4c03-ae6c-f6a330e9fcb8\nsat, 22 dec 2018 13:02:24 gmt\n\n'\r\nActivityId: 4c70a3cf-0a50-4991-8d62-60f2394b1cf1, Microsoft.Azure.Documents.Common/2.1.0.0"}
+Program Output below:
 
- */
+*/
